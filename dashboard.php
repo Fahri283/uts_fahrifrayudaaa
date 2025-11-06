@@ -49,3 +49,10 @@ foreach ($kode_barang as $i => $kode) {
         $grandtotal += $total[$i];
     }
 }
+
+echo "<tr><td colspan='5'><hr></td></tr>";
+echo "<tr><td colspan='4' align='right'><b>Total Belanja:</b></td><td><b>Rp" . number_format($grandtotal, 0, ',', '.') . "</b></td></tr>";
+echo "</table>";
+
+echo "<br><a href='logout.php'>Logout</a>";
+?>
