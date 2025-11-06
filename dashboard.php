@@ -31,3 +31,21 @@ for ($i = 0; $i < count($kode_barang); $i++) {
         $total[$i] = 0;
     }
 }
+
+$grandtotal = 0;
+echo "<h3>Daftar Pembelian:</h3>";
+echo "<table border='1' cellpadding='5' cellspacing='0'>";
+echo "<tr><th>Kode</th><th>Nama Barang</th><th>Harga</th><th>Jumlah</th><th>Total</th></tr>";
+
+foreach ($kode_barang as $i => $kode) {
+    if ($beli[$i] == 1) {
+        echo "<tr>";
+        echo "<td>$kode</td>";
+        echo "<td>{$nama_barang[$i]}</td>";
+        echo "<td>Rp" . number_format($harga_barang[$i], 0, ',', '.') . "</td>";
+        echo "<td>{$jumlah[$i]}</td>";
+        echo "<td>Rp" . number_format($total[$i], 0, ',', '.') . "</td>";
+        echo "</tr>";
+        $grandtotal += $total[$i];
+    }
+}
