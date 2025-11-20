@@ -146,9 +146,9 @@ function formatRupiah($angka) {
             </div>
         </div>
         <div class="header-right">
-            <span>Selamat datang, admin!</span>
+            <span>Selamat datang, FAHRI !</span>
             <div class="role">Role: Dosen</div>
-            <button class="logout-btn">Logout</button>
+            <a href="logout.php" class="logout-btn" style="text-decoration: none;">Logout</a>
         </div>
     </div>
     
@@ -162,25 +162,25 @@ function formatRupiah($angka) {
             <div class="input-group">
                 <label>Kode Barang</label>
                 <input type="text" name="kode" class="input-field" placeholder="Masukkan Kode Barang (cth: A01)" 
-                       required value="<?= htmlspecialchars($inputKode) ?>">
+                        required value="<?= htmlspecialchars($inputKode) ?>">
             </div>
             
             <div class="input-group">
                 <label>Nama Barang</label>
                 <input type="text" name="nama" class="input-field" placeholder="Masukkan Nama Barang" 
-                       required value="<?= htmlspecialchars($inputNama) ?>">
+                        required value="<?= htmlspecialchars($inputNama) ?>">
             </div>
 
             <div class="form-row">
                 <div class="input-group">
                     <label>Harga</label>
                     <input type="text" name="harga" class="input-field" placeholder="Masukkan Harga (cth: 5000)" 
-                           required value="<?= htmlspecialchars($inputHarga) ?>">
+                            required value="<?= htmlspecialchars($inputHarga) ?>">
                 </div>
                 <div class="input-group">
                     <label>Jumlah</label>
                     <input type="number" name="jumlah" class="input-field" min="1" placeholder="Masukkan Jumlah" 
-                           required value="<?= htmlspecialchars($inputJumlah) ?>">
+                            required value="<?= htmlspecialchars($inputJumlah) ?>">
                 </div>
             </div>
 
