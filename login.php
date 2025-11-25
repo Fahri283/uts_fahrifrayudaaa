@@ -1,40 +1,52 @@
 <?php
 session_start();
 
+$valid_user = [
+    'username' => 'fahri',
+    'email'    => 'frayudafahri@gmail.com',
+    'password' => '12345' 
+];
+
 // Cek apakah user sudah login
 if (isset($_SESSION['username'])) {
-    // Ganti 'dashboard.php' dengan nama file yang benar jika berbeda
+    // Ganti 'dashboard.php' jika nama file berbeda
     header("Location: dashboard.php");
     exit;
 }
 
+$error = '';
+
 // Proses login saat form dikirim
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
+    $username_input = $_POST['username'] ?? '';
+    $email_input    = $_POST['email'] ?? '';
+    $password_input = $_POST['password'] ?? '';
 
-    // Login sederhana (username: fahri, password: 12345)
-    if ($username == 'fahri' && $password === '12345') {
-        $_SESSION['username'] = $username;
+    // Cek kecocokan
+    if (
+        $username_input == $valid_user['username'] &&
+        $email_input    == $valid_user['email'] &&
+        $password_input === $valid_user['password']
+    ) {
+        $_SESSION['username'] = $username_input;
         $_SESSION['role'] = 'Dosen';
-        // Ganti 'dashboard.php' dengan nama file yang benar jika berbeda
+        // Ganti 'dashboard.php' jika nama file berbeda
         header("Location: dashboard.php");
         exit;
     } else {
-        $error = "Username atau password salah!";
+        $error = "Username, email, atau password salah!";
     }
 }
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <title>Polgan Mart - Login</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halaman Login Keren</title>
     <style>
-        /* CSS Mewah/Modern */
-        
-        /* 1. Reset dan Font Dasar */
+        /* --- Style CSS untuk Mempercantik Tampilan --- */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f4f7f6; /* Warna latar belakang lembut */
@@ -43,125 +55,109 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            color: #333;
         }
 
-        /* 2. Container Login Card */
         .login-container {
             background: #ffffff;
             padding: 40px;
-            border-radius: 15px; /* Sudut membulat */
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Bayangan lembut untuk kesan 'floating' */
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Bayangan elegan */
             width: 100%;
-            max-width: 400px; /* Ukuran yang pas */
-            text-align: center;
-        }
-
-        /* 3. Judul */
-        h2 {
-            font-size: 28px;
-            color: #0d6efd; /* Warna utama */
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-        
-        .subtitle {
-            font-size: 14px;
-            color: #6c757d;
-            margin-bottom: 30px;
-        }
-
-        /* 4. Form Styling */
-        form {
-            text-align: left;
-        }
-        
-        /* 5. Input Fields */
-        input[type="text"],
-        input[type="password"] {
-            width: 100%;
-            padding: 12px 15px;
-            margin-bottom: 20px;
-            border: 1px solid #ced4da; /* Garis tepi lembut */
-            border-radius: 8px;
+            max-width: 400px;
             box-sizing: border-box;
-            font-size: 16px;
-            transition: border-color 0.3s, box-shadow 0.3s;
-            outline: none; /* Hilangkan outline default */
-        }
-        
-        input[type="text"]:focus,
-        input[type="password"]:focus {
-            border-color: #0d6efd; /* Garis tepi biru saat fokus */
-            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25); /* Glow lembut saat fokus */
         }
 
-        /* 6. Label */
-        label {
+        .login-container h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #faf606ff;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
             display: block;
-            font-size: 14px;
             margin-bottom: 8px;
-            color: #495057;
-            font-weight: 500;
-        }
-        
-        /* 7. Button Submit */
-        button[type="submit"] {
-            width: 100%;
-            background-color: #0d6efd; /* Warna utama biru */
-            color: white;
-            padding: 14px 20px;
-            margin-top: 10px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 18px;
+            color: #555;
             font-weight: 600;
-            transition: background-color 0.3s, transform 0.1s;
         }
 
-        button[type="submit"]:hover {
-            background-color: #0a58ca; /* Biru yang sedikit lebih gelap saat hover */
-        }
-        
-        button[type="submit"]:active {
-            transform: translateY(1px); /* Efek tekan */
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
         }
 
-        /* 8. Error Message */
+        .form-group input:focus {
+            border-color: #faf606ff; /* Fokus berwarna biru */
+            outline: none;
+        }
+
+        .btn-login {
+            width: 100%;
+            background-color: #faf606ff; /* Warna tombol utama */
+            color: white;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-login:hover {
+            background-color: #faf606ff; /* Warna lebih gelap saat hover */
+        }
+
         .error-message {
-            color: #dc3545; /* Merah untuk pesan error */
-            background-color: #f8d7da; /* Latar belakang merah muda lembut */
+            color: #dc3545; /* Warna merah untuk pesan error */
+            background-color: #f8d7da;
             border: 1px solid #f5c6cb;
             padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
+            border-radius: 5px;
             text-align: center;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
+    <div class="login-container">
+        <h2>FAZU BANANA MELT </h2>
 
-<div class="login-container">
-    <h2>Polgan Mart</h2>
-    <p class="subtitle">Sistem Penjualan</p>
-    
-    <?php if (!empty($error)): ?>
-        <p class="error-message"><?= $error ?></p>
-    <?php endif; ?>
-    
-    <form method="post">
-        
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" required>
-        
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required>
-        
-        <button type="submit">Login</button>
-    </form>
-</div>
+        <?php if (!empty($error)): ?>
+            <div class="error-message">
+                <?= htmlspecialchars($error); ?>
+            </div>
+        <?php endif; ?>
 
+        <form method="POST" action="">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+
+            <button type="submit" class="btn-login">MASUK</button>
+        </form>
+    </div>
 </body>
 </html>
