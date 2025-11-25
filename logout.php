@@ -17,7 +17,7 @@ $redirect_target = "login.php";
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logout Berhasil</title>
+    <title>Logout</title>
     <meta http-equiv="refresh" content="3;url=<?= htmlspecialchars($redirect_target) ?>">
     <style>
         /* --- Style CSS Keren --- */

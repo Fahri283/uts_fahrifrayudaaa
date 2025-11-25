@@ -95,7 +95,7 @@ function formatRupiah($angka) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> FAZU BANANA MELT</title>
+    <title> dashboard</title>
     <style>
         /* --- General Setup --- */
         :root {
