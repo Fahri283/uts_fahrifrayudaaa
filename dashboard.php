@@ -95,7 +95,7 @@ function formatRupiah($angka) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard POS FAZU BANANA MELT</title>
+    <title> FAZU BANANA MELT</title>
     <style>
         /* --- General Setup --- */
         :root {
@@ -410,7 +410,7 @@ function formatRupiah($angka) {
     
     <div class="sidebar">
         <div class="header-sidebar">
-            <h1>FAZU BANANA POS</h1>
+            <h1>FAZU BANANA MELT</h1>
             <p>Input Manual Penjualan</p>
         </div>
         
@@ -459,7 +459,7 @@ function formatRupiah($angka) {
         <div class="header-main">
             <h2>🛒 Daftar Pembelian (Keranjang)</h2>
             <div class="user-info">
-                <span>Halo, **FAHRI**!</span>
+                <span>Halo, FAHRI FRAYUDA</span>
                 <div class="role">Role: ADMIN</div>
                 <a href="logout.php" class="logout-btn">Logout</a>
             </div>
