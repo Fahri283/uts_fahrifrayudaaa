@@ -1,40 +1,74 @@
 <?php
+// Pastikan sesi dimulai di awal
 session_start();
 
-$inputKode = isset($_POST['kode']) ? strtoupper($_POST['kode']) : '';
-$inputNama = isset($_POST['nama']) ? $_POST['nama'] : '';
-// Hilangkan titik ribuan agar bisa dihitung (untuk input harga)
-$inputHarga = isset($_POST['harga']) ? str_replace('.', '', $_POST['harga']) : ''; 
+// --- Konfigurasi dan Fungsi Pembantu ---
+
+/**
+ * Format angka menjadi Rupiah (Rp 100.000)
+ * @param int $angka
+ * @return string
+ */
+function formatRupiah($angka) {
+    return 'Rp ' . number_format($angka, 0, ',', '.');
+}
+
+/**
+ * Menghitung persentase diskon berdasarkan total belanja.
+ * @param int $total
+ * @return int Persentase diskon (misalnya 10)
+ */
+function hitungDiskonPersen($total) {
+    if ($total <= 0) {
+        return 0;
+    } elseif ($total < 50000) {
+        return 5;
+    } elseif ($total <= 100000) {
+        return 10;
+    } else { // $total > 100000
+        return 15;
+    }
+}
+
+// --- Inisialisasi Input dan Status ---
+
+// Ambil input dan bersihkan/format sesuai kebutuhan
+$inputKode = isset($_POST['kode']) ? strtoupper(trim($_POST['kode'])) : '';
+$inputNama = isset($_POST['nama']) ? trim($_POST['nama']) : '';
+// Hilangkan titik ribuan (jika ada) dari input harga untuk menjaga value field
+$inputHarga = isset($_POST['harga']) ? str_replace('.', '', $_POST['harga']) : '';
 $inputJumlah = isset($_POST['jumlah']) ? intval($_POST['jumlah']) : '';
 $statusMessage = '';
+
+// --- Logika Aksi POST (Tambah/Kosongkan) ---
 
 // Tombol Kosongkan Keranjang
 if (isset($_POST['clear'])) {
     unset($_SESSION['cart']);
-    $statusMessage = 'Keranjang berhasil dikosongkan.';
+    $statusMessage = '<span class="success-text">🗑️ Keranjang berhasil dikosongkan.</span>';
 }
 
 // Proses Tambah Barang
 if (isset($_POST['tambah'])) {
-    $kode = strtoupper($_POST['kode']);
-    $nama = $_POST['nama'];
-    // Hapus format Rupiah atau titik ribuan untuk perhitungan
-    $harga = intval(str_replace(['.', 'Rp '], '', $_POST['harga'])); 
+    $kode = strtoupper(trim($_POST['kode']));
+    $nama = trim($_POST['nama']);
+    // Pastikan harga adalah integer setelah menghapus semua karakter non-digit kecuali tanda minus (jika ada, tapi di sini diasumsikan positif)
+    $harga = intval(preg_replace('/[^0-9]/', '', $_POST['harga'])); 
     $jumlah = intval($_POST['jumlah']);
 
     // Validasi dasar
-    if (empty($kode) || empty($nama) || empty($harga) || empty($jumlah) || $harga <= 0 || $jumlah <= 0) {
-        $statusMessage = '<span style="color:red;">⚠️ Error: Harap isi semua kolom dengan nilai yang valid.</span>';
+    if (empty($kode) || empty($nama) || $harga <= 0 || $jumlah <= 0) {
+        $statusMessage = '<span class="error-text">⚠️ Error: Harap isi semua kolom dengan nilai yang valid.</span>';
     } else {
         // Data valid, proses penambahan
         $subtotal = $harga * $jumlah;
         $found = false;
 
-        // Cek jika barang sudah ada di keranjang (didasarkan pada kode)
+        // Cek jika barang sudah ada di keranjang
         if (isset($_SESSION['cart'])) {
             foreach ($_SESSION['cart'] as $key => $item) {
                 if ($item['kode'] === $kode) {
-                    // Jika kode sama, hanya update jumlah dan subtotal
+                    // Update jumlah dan subtotal
                     $_SESSION['cart'][$key]['jumlah'] += $jumlah;
                     $_SESSION['cart'][$key]['subtotal'] += $subtotal;
                     $found = true;
@@ -59,11 +93,11 @@ if (isset($_POST['tambah'])) {
         $inputNama = '';
         $inputHarga = '';
         $inputJumlah = '';
-        $statusMessage = '<span style="color:green;">✅ Sukses: Barang ' . htmlspecialchars($nama) . ' berhasil ditambahkan.</span>';
+        $statusMessage = '<span class="success-text">✅ Sukses: Barang **' . htmlspecialchars($nama) . '** berhasil ditambahkan.</span>';
     }
 }
 
-// --- Kalkulasi Total ---
+// --- Kalkulasi Total & Diskon ---
 $total = 0;
 if (isset($_SESSION['cart'])) {
     foreach ($_SESSION['cart'] as $item) {
@@ -71,23 +105,9 @@ if (isset($_SESSION['cart'])) {
     }
 }
 
-// --- Logika Diskon ---
-$persenDiskon = 0;
-if ($total > 0 && $total < 50000) {
-    $persenDiskon = 5;
-} elseif ($total >= 50000 && $total <= 100000) {
-    $persenDiskon = 10;
-} elseif ($total > 100000) {
-    $persenDiskon = 15;
-}
-
+$persenDiskon = hitungDiskonPersen($total);
 $diskon = ($persenDiskon / 100) * $total;
 $grandTotal = $total - $diskon;
-
-// Fungsi untuk format rupiah
-function formatRupiah($angka) {
-    return 'Rp ' . number_format($angka, 0, ',', '.');
-}
 ?>
 
 <!DOCTYPE html>
@@ -95,20 +115,23 @@ function formatRupiah($angka) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> dashboard</title>
+    <title> Dashboard Penjualan</title>
     <style>
         /* --- General Setup --- */
         :root {
-            --primary-color: #f7d300; /* Kuning Pisang */
+            --primary-color: #ffc300; /* Kuning Cerah */
             --secondary-color: #333;
-            --background-light: #f9f9f9;
-            --background-dark: #eee;
-            --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.05);
-            --shadow-medium: 0 4px 15px rgba(0, 0, 0, 0.1);
+            --background-light: #f4f7f6; /* Abu-abu Sangat Terang */
+            --background-dark: #ffffff; /* Putih bersih */
+            --accent-color: #007bff; /* Biru untuk aksi/informasi */
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --shadow-subtle: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --shadow-medium: 0 8px 25px rgba(0, 0, 0, 0.1);
         }
 
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: 'Poppins', sans-serif; /* Font modern */
             background-color: var(--background-light); 
             padding: 0; 
             margin: 0; 
@@ -119,52 +142,52 @@ function formatRupiah($angka) {
 
         .dashboard-container { 
             width: 95%; 
-            max-width: 1200px; 
-            background: white; 
-            margin: 30px auto; 
-            border-radius: 15px; 
+            max-width: 1300px; /* Lebar ditingkatkan */
+            background: var(--background-dark); 
+            margin: 40px auto; 
+            border-radius: 20px; 
             box-shadow: var(--shadow-medium); 
             display: flex;
-            min-height: 80vh;
+            min-height: 85vh;
             overflow: hidden;
         }
 
         /* --- Sidebar / Input Section --- */
         .sidebar {
-            width: 350px;
-            background: var(--background-dark);
-            padding: 30px 20px;
-            border-right: 1px solid #ddd;
+            width: 400px; /* Lebar ditingkatkan */
+            background: #ffffff;
+            padding: 40px 30px;
+            border-right: 1px solid #e0e0e0;
             display: flex;
             flex-direction: column;
         }
 
         .header-sidebar {
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid var(--primary-color);
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid var(--primary-color);
         }
 
         .header-sidebar h1 {
             margin: 0;
             color: var(--secondary-color);
-            font-size: 24px;
-            font-weight: 700;
+            font-size: 28px;
+            font-weight: 800;
         }
         
         .header-sidebar p {
-            font-size: 13px;
-            color: #666;
+            font-size: 14px;
+            color: #6c757d;
             margin-top: 5px;
         }
 
         .input-group { 
-            margin-bottom: 20px; 
+            margin-bottom: 25px; 
         }
 
         label { 
             display: block; 
-            font-size: 14px; 
+            font-size: 15px; 
             font-weight: 600; 
             color: var(--secondary-color); 
             margin-bottom: 8px; 
@@ -172,23 +195,24 @@ function formatRupiah($angka) {
 
         .input-field { 
             width: 100%; 
-            padding: 12px; 
-            border: 1px solid #ccc; 
-            border-radius: 8px; 
+            padding: 14px; 
+            border: 1px solid #ddd; 
+            border-radius: 10px; 
             box-sizing: border-box; 
-            font-size: 14px; 
+            font-size: 15px; 
+            background-color: #fcfcfc;
             transition: border-color 0.3s, box-shadow 0.3s; 
         }
 
         .input-field:focus { 
             border-color: var(--primary-color); 
-            box-shadow: 0 0 0 3px rgba(247, 211, 0, 0.3); 
+            box-shadow: 0 0 0 3px rgba(255, 195, 0, 0.2); 
             outline: none;
         }
 
         .form-row { 
             display: flex; 
-            gap: 15px; 
+            gap: 20px; 
         }
 
         .form-row .input-group { 
@@ -197,124 +221,141 @@ function formatRupiah($angka) {
 
         .button-row { 
             display: flex; 
-            gap: 10px; 
-            margin-top: 20px; 
+            gap: 15px; 
+            margin-top: 30px; 
         }
         
         .btn-action { 
-            padding: 12px 20px; 
-            border-radius: 8px; 
+            padding: 14px 25px; 
+            border-radius: 10px; 
             cursor: pointer; 
             font-weight: 600; 
-            font-size: 15px; 
-            transition: background-color 0.3s, opacity 0.3s; 
+            font-size: 16px; 
+            transition: background-color 0.3s, transform 0.2s; 
+            border: none;
         }
         
         .btn-tambahkan { 
             background: var(--primary-color); 
             color: var(--secondary-color); 
-            border: none; 
             flex-grow: 1;
         }
 
         .btn-tambahkan:hover {
-            background-color: #e0be00;
+            background-color: #e6b300;
+            transform: translateY(-2px);
         }
         
         .btn-batal { 
-            background: #ffffff; 
-            color: #666; 
-            border: 1px solid #ccc; 
-            width: 100px;
+            background: #e9ecef; 
+            color: #6c757d; 
+            width: 120px;
         }
         
         .btn-batal:hover {
-            background-color: #f0f0f0;
+            background-color: #dee2e6;
         }
         
         .status-message {
-            margin: 10px 0 15px 0;
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 14px;
+            margin: 10px 0 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 15px;
             font-weight: 500;
-            background-color: #fff8e1; /* Latar belakang untuk pesan status */
+            background-color: #fff8e1; 
             border-left: 5px solid var(--primary-color);
         }
+
+        .success-text { color: var(--success-color); }
+        .error-text { color: var(--error-color); }
         
         /* --- Main Content / Keranjang Section --- */
         .main-content {
             flex-grow: 1;
-            padding: 30px;
+            padding: 40px;
             display: flex;
             flex-direction: column;
+            background-color: var(--background-dark);
         }
 
         .header-main {
             display: flex; 
             justify-content: space-between; 
-            align-items: center; 
-            padding-bottom: 15px;
+            align-items: flex-start; 
+            padding-bottom: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
         }
         
         .header-main h2 {
-            font-size: 20px;
+            font-size: 22px;
             margin: 0;
             color: var(--secondary-color);
         }
 
         .user-info {
             text-align: right; 
-            font-size: 14px;
+            font-size: 15px;
+            line-height: 1.4;
         }
 
         .user-info .role { 
             font-size: 12px; 
-            color: #888; 
+            color: var(--accent-color); 
             margin-top: 2px;
+            font-weight: 600;
         }
 
         .logout-btn { 
             background: none; 
             border: none; 
-            color: #dc3545; 
+            color: var(--error-color); 
             cursor: pointer; 
             padding: 0; 
-            margin-top: 4px; 
-            font-size: 12px; 
-            text-decoration: none; 
+            margin-top: 5px; 
+            font-size: 13px; 
+            text-decoration: underline; 
             font-weight: 500;
+            display: block;
         }
 
         .purchase-list-container {
             flex-grow: 1;
-            overflow-y: auto; /* Scroll jika keranjang penuh */
-            padding-right: 5px;
+            overflow-y: auto; 
+            padding-right: 10px;
         }
 
         .table-list { 
             width: 100%; 
-            border-collapse: collapse; 
-            font-size: 14px; 
+            border-collapse: separate; 
+            border-spacing: 0;
+            font-size: 15px; 
+            box-shadow: var(--shadow-subtle);
+            border-radius: 10px;
+            overflow: hidden;
         }
 
         .table-list th { 
-            background-color: var(--background-dark);
-            color: var(--secondary-color);
-            padding: 12px 15px; 
+            background-color: var(--accent-color); /* Warna yang lebih tegas */
+            color: white;
+            padding: 15px; 
             text-align: left; 
-            border-bottom: 2px solid var(--primary-color);
             position: sticky;
             top: 0;
+            font-weight: 700;
         }
 
         .table-list td { 
-            padding: 12px 15px; 
+            padding: 15px; 
             border-bottom: 1px solid #f0f0f0; 
         }
         
+        .table-list tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
         .table-list tr:hover {
-            background-color: #fffbe6;
+            background-color: #fff3cd; /* Kuning lembut saat hover */
         }
 
         .text-right {
@@ -323,83 +364,85 @@ function formatRupiah($angka) {
 
         /* --- Summary Section --- */
         .summary-area { 
-            margin-top: 20px; 
-            padding-top: 15px; 
-            border-top: 1px solid #ddd;
+            margin-top: 30px; 
+            padding-top: 20px; 
+            border-top: 2px solid #e0e0e0;
         }
 
         .summary-row { 
             display: flex; 
             justify-content: flex-end; 
-            padding: 8px 0; 
-            font-size: 15px; 
+            padding: 10px 0; 
+            font-size: 16px; 
         }
 
         .summary-row .label { 
-            width: 150px; 
+            width: 200px; 
             font-weight: 500; 
             color: #555; 
             text-align: right; 
-            padding-right: 15px; 
+            padding-right: 20px; 
         }
 
         .summary-row .value { 
-            width: 120px; 
+            width: 150px; 
             text-align: right; 
             font-weight: 600; 
         }
 
         .summary-total-bayar { 
-            border-top: 2px solid var(--secondary-color); 
-            margin-top: 10px; 
-            padding-top: 10px; 
-            font-size: 18px; 
+            border-top: 3px solid var(--secondary-color); 
+            margin-top: 15px; 
+            padding-top: 15px; 
+            font-size: 24px; 
         }
         
         .summary-total-bayar .label {
-            font-weight: 700;
+            font-weight: 800;
             color: var(--secondary-color);
         }
 
         .summary-total-bayar .value {
             color: var(--primary-color);
-            font-weight: 700;
+            font-weight: 800;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .summary-diskon .value { 
-            color: #28a745; /* Hijau untuk diskon */
+            color: var(--success-color); 
         }
         
         .footer-action {
-            margin-top: 15px;
+            margin-top: 20px;
             text-align: right;
         }
         
         .btn-kosongkan { 
-            background: #dc3545; 
+            background: var(--error-color); 
             color: white; 
             border: none; 
-            padding: 8px 15px; 
-            border-radius: 6px; 
+            padding: 10px 20px; 
+            border-radius: 8px; 
             cursor: pointer; 
-            font-size: 13px; 
+            font-size: 14px; 
             width: auto; 
             margin: 0; 
             transition: background-color 0.3s;
         }
         
         .btn-kosongkan:hover {
-            background-color: #c82333;
+            background-color: #a71d2a;
         }
         
         .empty-cart-message {
             text-align: center; 
-            padding: 50px 20px; 
-            color: #888; 
+            padding: 80px 30px; 
+            color: #adb5bd; 
             font-style: italic;
-            background-color: #fcfcfc;
-            border: 1px dashed #ddd;
-            border-radius: 8px;
+            font-size: 1.1em;
+            background-color: #f8f9fa;
+            border: 2px dashed #ced4da;
+            border-radius: 12px;
             margin-top: 20px;
         }
     </style>
@@ -410,11 +453,11 @@ function formatRupiah($angka) {
     
     <div class="sidebar">
         <div class="header-sidebar">
-            <h1>FAZU BANANA MELT</h1>
-            <p>Input Manual Penjualan</p>
+            <h1>FAZU BANANA MELT </h1>
+            <p>Sistem Kasir Sederhana</p>
         </div>
         
-        <form method="post">
+        <form method="post" id="purchaseForm">
             
             <?php if ($statusMessage): ?>
                 <div class="status-message">
@@ -424,7 +467,7 @@ function formatRupiah($angka) {
 
             <div class="input-group">
                 <label for="kode">Kode Barang</label>
-                <input type="text" id="kode" name="kode" class="input-field" placeholder="Contoh: A01" 
+                <input type="text" id="kode" name="kode" class="input-field" placeholder="Contoh: BNT01" 
                         required value="<?= htmlspecialchars($inputKode) ?>">
             </div>
             
@@ -436,20 +479,20 @@ function formatRupiah($angka) {
 
             <div class="form-row">
                 <div class="input-group">
-                    <label for="harga">Harga (Rp)</label>
-                    <input type="text" id="harga" name="harga" class="input-field" placeholder="Contoh: 5000" 
+                    <label for="harga">Harga Satuan (Angka)</label>
+                    <input type="text" id="harga" name="harga" class="input-field" placeholder="Contoh: 15000" 
                             required value="<?= htmlspecialchars($inputHarga) ?>">
                 </div>
                 <div class="input-group">
-                    <label for="jumlah">Jumlah</label>
-                    <input type="number" id="jumlah" name="jumlah" class="input-field" min="1" placeholder="Masukkan Jumlah" 
+                    <label for="jumlah">Jumlah Beli (Qty)</label>
+                    <input type="number" id="jumlah" name="jumlah" class="input-field" min="1" placeholder="Min. 1" 
                             required value="<?= htmlspecialchars($inputJumlah) ?>">
                 </div>
             </div>
 
             <div class="button-row">
                 <button class="btn-action btn-tambahkan" name="tambah">➕ Tambahkan ke Keranjang</button>
-                <button type="button" class="btn-action btn-batal" onclick="window.location.href=window.location.href">Batal</button>
+                <button type="button" class="btn-action btn-batal" onclick="window.location.href=window.location.href">Reset</button>
             </div>
         </form>
     </div>
@@ -457,11 +500,11 @@ function formatRupiah($angka) {
     <div class="main-content">
         
         <div class="header-main">
-            <h2>🛒 Daftar Pembelian (Keranjang)</h2>
+            <h2>🛒 Keranjang Belanja Anda</h2>
             <div class="user-info">
-                <span>Halo, FAHRI FRAYUDA</span>
-                <div class="role">Role: ADMIN</div>
-                <a href="logout.php" class="logout-btn">Logout</a>
+                <span>Selamat datang, FAHRI FRAYUDA</span>
+                <div class="role">Role: ADMIN KASIR</div>
+                <a href="logout.php" class="logout-btn">Logout &rarr;</a>
             </div>
         </div>
         
@@ -471,10 +514,10 @@ function formatRupiah($angka) {
                 <thead>
                     <tr>
                         <th style="width: 10%;">Kode</th>
-                        <th style="width: 40%;">Nama Barang</th>
-                        <th style="width: 15%;" class="text-right">Harga Satuan</th>
-                        <th style="width: 10%;" class="text-right">Qty</th>
-                        <th style="width: 25%;" class="text-right">Subtotal</th>
+                        <th style="width: 35%;">Nama Barang</th>
+                        <th style="width: 20%;" class="text-right">Harga Satuan</th>
+                        <th style="width: 15%;" class="text-right">Qty</th>
+                        <th style="width: 20%;" class="text-right">Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -492,7 +535,8 @@ function formatRupiah($angka) {
 
             <?php else: ?>
             <div class="empty-cart-message">
-                Keranjang pembelian Anda saat ini kosong. Silakan tambahkan item dari formulir di samping.
+                <p>🛍️ Keranjang pembelian Anda saat ini kosong.</p> 
+                <p>Silakan input dan tambahkan item dari panel di samping.</p>
             </div>
             <?php endif; ?>
         </div>
@@ -504,21 +548,32 @@ function formatRupiah($angka) {
                 <div class="value"><?= formatRupiah($total) ?></div>
             </div>
             <div class="summary-row summary-diskon">
-                <div class="label">Diskon (<?= $persenDiskon ?>%)</div>
+                <div class="label">Diskon Spesial (<?= $persenDiskon ?>%)</div>
                 <div class="value">- <?= formatRupiah($diskon) ?></div>
             </div>
             <div class="summary-row summary-total-bayar">
-                <div class="label">GRAND TOTAL BAYAR</div>
+                <div class="label">TOTAL AKHIR BAYAR</div>
                 <div class="value">**<?= formatRupiah($grandTotal) ?>**</div>
             </div>
         </div>
 
         <div class="footer-action">
             <form method="post" style="display:inline-block;">
-                <button class="btn-kosongkan" name="clear" onclick="return confirm('Anda yakin ingin mengosongkan seluruh keranjang?');">❌ Kosongkan Keranjang</button>
+                <button class="btn-kosongkan" name="clear" onclick="return confirm('Anda yakin ingin MENGOSONGKAN SELURUH keranjang? Tindakan ini tidak dapat dibatalkan.');">❌ Kosongkan Keranjang</button>
             </form>
         </div>
         <?php endif; ?>
 
-    </div> </div> </body>
-</html>
+    </div> 
+</div>
+
+<script>
+    // FUNGSI JAVASCRIPT UNTUK MEMFORMAT INPUT HARGA SAAT DIKETIK
+    document.addEventListener('DOMContentLoaded', function() {
+        const hargaInput = document.getElementById('harga');
+
+        hargaInput.addEventListener('input', function(e) {
+            let value = e.target.value;
+            
+            // Hapus semua karakter non-digit (termasuk titik/koma)
+            value = value.replace(/[^0
